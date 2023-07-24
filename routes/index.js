@@ -16,7 +16,7 @@ export default function routes(app, addon) {
   });
 
   // Add additional route handlers here...
-  app.get("/web-item", (req, res) => {
+  app.get("/item", (req, res) => {
     res.render("web-item.jsx");
   });
 }
