@@ -28,9 +28,9 @@ export default function WebItem() {
       url: "/rest/api/3/search?jql=",
       type: "GET",
       success: (data) => {
-        const d = JSON.parse(data);
+        const parsed = JSON.parse(data);
 
-        const iss = d.issues.map((i) => {
+        const iss = parsed.issues.map((i) => {
           return {
             label: i.key,
             value: i.id,
