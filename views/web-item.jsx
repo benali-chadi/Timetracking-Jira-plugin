@@ -36,6 +36,7 @@ export default function WebItem() {
             value: i.id,
           };
         });
+
         setIssues(iss);
       },
       error: (err) => {
@@ -59,10 +60,10 @@ export default function WebItem() {
         <ModalBody>
           <p>Issues select list</p>
           <Select
+            required
             placeholder="Select an issue"
             options={issues}
             onChange={(e) => {
-              console.log(e);
               setSelectedIssue(e.value);
             }}
           />
