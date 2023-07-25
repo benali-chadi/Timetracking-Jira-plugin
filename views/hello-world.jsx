@@ -12,6 +12,7 @@ export default function HelloWorld() {
   const [issues, setIssues] = useState([]);
   const [worklogMap, setWorklogMap] = useState(new Map());
   const [displayItems, setDisplayItems] = useState([]);
+  const [expanded, setExpanded] = useState({});
 
   useEffect(() => {
     AP.request({
@@ -53,7 +54,7 @@ export default function HelloWorld() {
 
   const getItems = () => {
     let arr = Array.from(worklogMap).map(([k, v]) => {
-      console.log(v);
+      setExpanded({ ...expanded, [k]: true });
       return {
         id: k,
         title: k,
@@ -96,6 +97,9 @@ export default function HelloWorld() {
               itemId={id}
               items={children}
               hasChildren={children.length > 0}
+              isExpanded={expanded[id]}
+              onExpand={() => setExpanded({ ...expanded, [id]: true })}
+              onCollapse={() => setExpanded({ ...expanded, [id]: false })}
             >
               <Cell>{title}</Cell>
               <Cell>{description}</Cell>
