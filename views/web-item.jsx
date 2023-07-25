@@ -9,19 +9,21 @@ import Modal, {
   // ModalTransition,
 } from "@atlaskit/modal-dialog";
 import Select from "@atlaskit/select";
+import TextField from "@atlaskit/textfield";
+import TextArea from "@atlaskit/textarea";
+import { DateTimePicker } from "@atlaskit/datetime-picker";
 
 export default function WebItem() {
   const [issues, setIssues] = useState([]);
   const [selectedIssue, setSelectedIssue] = useState(null);
-  // const [timeSpent, setTimeSpent] = useState(0);
+  const [timeSpent, setTimeSpent] = useState(0);
+  const [comment, setComment] = useState("");
+  const [startDate, setStartDate] = useState(null);
+  const [isStartDate, setIsStartDate] = useState(true);
 
   const onClose = () => {
     AP.dialog.close();
   };
-
-  // key
-  // id
-  // fields.issuetype.iconUrl
 
   useEffect(() => {
     AP.request({
@@ -45,38 +47,126 @@ export default function WebItem() {
     });
   }, []);
 
+  useEffect(() => {
+    if (!startDate) return;
+    else setIsStartDate(true);
+  }, [startDate]);
+
   const onSubmit = (e) => {
     e.preventDefault();
+    if (!startDate) {
+      setIsStartDate(false);
+      return;
+    }
+    const splitedStartDate = startDate.split("+");
+    const dateStart = splitedStartDate[0] + ":00.000+" + splitedStartDate[1];
+    console.log("startDate", dateStart);
 
+    const bodyData = {
+      comment: {
+        content: [
+          {
+            content: [
+              {
+                text: comment,
+                type: "text",
+              },
+            ],
+            type: "paragraph",
+          },
+        ],
+        type: "doc",
+        version: 1,
+      },
+      started: dateStart,
+      timeSpentSeconds: timeSpent * 60 * 60,
+    };
+
+    AP.request({
+      url: "/rest/api/3/issue/TP-2/worklog",
+      type: "POST",
+      data: JSON.stringify(bodyData),
+      // headers: {
+      //   "Content-Type": "application/json",
+      //   "Accept": "application/json",
+      // },
+      contentType: "application/json",
+      success: (res) => {
+        console.log("Created Worklog:", res);
+      },
+      error: (err) => {
+        console.log("err", err);
+      },
+    });
     console.log("okokok");
   };
 
   return (
     <Modal onClose={onClose}>
-      <form onSubmit={onSubmit} style={{ height: "100%", width: "100%" }}>
+      <form
+        onSubmit={onSubmit}
+        style={{
+          height: "100%",
+          width: "100%",
+        }}
+      >
         <ModalHeader>
           <ModalTitle>Create worklog</ModalTitle>
         </ModalHeader>
-        <ModalBody>
-          <p>Issues select list</p>
+        <ModalBody
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "1rem",
+          }}
+        >
           <Select
             required
             placeholder="Select an issue"
             options={issues}
-            onChange={(e) => {
-              setSelectedIssue(e.value);
+            onChange={(v) => {
+              setSelectedIssue(v.value);
             }}
           />
           <p>Selected issue: {selectedIssue}</p>
 
-          <p>Time spent</p>
-          <p>Calendar</p>
+          <TextField
+            type="number"
+            max={8}
+            min={1}
+            placeholder="Enter time spent in hours"
+            isRequired
+            onChange={(e) => {
+              return setTimeSpent(e.target.value);
+            }}
+          />
+
+          <TextArea
+            style={{ marginTop: "10px" }}
+            placeholder="Enter a comment"
+            resize="auto"
+            onChange={(e) => setComment(e.target.value)}
+          />
+
+          <div>
+            <label htmlFor="Start Date">Start Date</label>
+            <DateTimePicker
+              name="Start Date"
+              timePickerProps={{}}
+              onChange={(e) => {
+                console.log(e);
+                return setStartDate(e);
+              }}
+            />
+            {!isStartDate && (
+              <p style={{ color: "red" }}>Please select a start date</p>
+            )}
+          </div>
         </ModalBody>
         <ModalFooter>
           <Button appearance="primary" type="submit">Create</Button>
           <Button onClick={onClose}>Cancel</Button>
         </ModalFooter>
-        {/* <p>issues: {issues}</p> */}
       </form>
     </Modal>
   );
