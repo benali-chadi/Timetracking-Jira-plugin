@@ -1,6 +1,4 @@
-import SectionMessage from "@atlaskit/section-message";
 import React, { useEffect, useState } from "react";
-import NewComp from "./new-comp";
 import Button from "@atlaskit/button";
 import TableTree, {
   Cell,
@@ -22,9 +20,7 @@ export default function HelloWorld() {
       success: (data) => {
         const parsed = JSON.parse(data);
         setIssues(parsed.issues);
-        console.log("CALL 1 \n");
         parsed.issues.forEach((element) => {
-          console.log("CALL BEFORE \n");
           AP.request({
             url: `/rest/api/3/issue/${element.key}/worklog`,
             type: "GET",
@@ -57,6 +53,7 @@ export default function HelloWorld() {
 
   const getItems = () => {
     let arr = Array.from(worklogMap).map(([k, v]) => {
+      console.log(v);
       return {
         id: k,
         title: k,
@@ -66,6 +63,7 @@ export default function HelloWorld() {
             id: elm.id,
             title: elm.author.displayName,
             description: elm.timeSpent,
+            startDate: new Date(elm.started).toLocaleString(),
           };
         }),
       };
@@ -89,10 +87,11 @@ export default function HelloWorld() {
         <Headers>
           <Header width={120}>Users</Header>
           <Header width={300}>Time Spent</Header>
+          <Header width={300}>Start Date</Header>
         </Headers>
         <Rows
           items={displayItems}
-          render={({ id, title, description, children = [] }) => (
+          render={({ id, title, description, startDate, children = [] }) => (
             <Row
               itemId={id}
               items={children}
@@ -100,6 +99,7 @@ export default function HelloWorld() {
             >
               <Cell>{title}</Cell>
               <Cell>{description}</Cell>
+              <Cell>{startDate}</Cell>
             </Row>
           )}
         />

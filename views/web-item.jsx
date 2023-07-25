@@ -6,7 +6,6 @@ import Modal, {
   ModalFooter,
   ModalHeader,
   ModalTitle,
-  // ModalTransition,
 } from "@atlaskit/modal-dialog";
 import Select from "@atlaskit/select";
 import TextField from "@atlaskit/textfield";
@@ -83,13 +82,9 @@ export default function WebItem() {
     };
 
     AP.request({
-      url: "/rest/api/3/issue/TP-2/worklog",
+      url: `/rest/api/3/issue/${selectedIssue}/worklog`,
       type: "POST",
       data: JSON.stringify(bodyData),
-      // headers: {
-      //   "Content-Type": "application/json",
-      //   "Accept": "application/json",
-      // },
       contentType: "application/json",
       success: (res) => {
         console.log("Created Worklog:", res);
@@ -98,7 +93,7 @@ export default function WebItem() {
         console.log("err", err);
       },
     });
-    console.log("okokok");
+    AP.dialog.close();
   };
 
   return (
@@ -128,7 +123,6 @@ export default function WebItem() {
               setSelectedIssue(v.value);
             }}
           />
-          <p>Selected issue: {selectedIssue}</p>
 
           <TextField
             type="number"
