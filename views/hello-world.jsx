@@ -9,10 +9,11 @@ import TableTree, {
 } from "@atlaskit/table-tree";
 
 export default function HelloWorld() {
-    const [issues, setIssues] = useState([]);
-    const [issueTypes, setIssueTypes] = useState([])
-    const [worklogMap, setWorklogMap] = useState(new Map());
-    const [displayItems, setDisplayItems] = useState([]);
+
+  const [issues, setIssues] = useState([]);
+  const [worklogMap, setWorklogMap] = useState(new Map());
+  const [displayItems, setDisplayItems] = useState([]);
+  const [expanded, setExpanded] = useState({});
 
     useEffect(() => {
         AP.request({
@@ -61,27 +62,27 @@ export default function HelloWorld() {
         }
     }, [worklogMap]);
 
-    const getItems = () => {
-        let arr = Array.from(worklogMap).map(([k, v]) => {
-            console.log(v);
-            return {
-                id: k,
-                title: k,
-                description: v.total.toString(),
-                children: v.worklogs.map((elm) => {
-                    return {
-                        id: elm.id,
-                        title: elm.author.displayName,
-                        description: elm.timeSpent,
-                        startDate: new Date(elm.started).toLocaleString(),
-                    };
-                }),
-            };
-        });
-        return arr;
-    };
-
-    return (
+  
+  const getItems = () => {
+    let arr = Array.from(worklogMap).map(([k, v]) => {
+      setExpanded({ ...expanded, [k]: true });
+      return {
+        id: k,
+        title: k,
+        description: v.total.toString(),
+        children: v.worklogs.map((elm) => {
+          return {
+            id: elm.id,
+            title: elm.author.displayName,
+            description: elm.timeSpent,
+            startDate: new Date(elm.started).toLocaleString(),
+          };
+        }),
+      };
+    });
+    return arr;
+  };
+  return (
         <>
             <Button
                 appearance="primary"
@@ -106,6 +107,9 @@ export default function HelloWorld() {
                             itemId={id}
                             items={children}
                             hasChildren={children.length > 0}
+                            isExpanded={expanded[id]}
+                            onExpand={() => setExpanded({ ...expanded, [id]: true })}
+                            onCollapse={() => setExpanded({ ...expanded, [id]: false })}
                         >
                             <Cell>
                                 {issueTypes.map(e => {
