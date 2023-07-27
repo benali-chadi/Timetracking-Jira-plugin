@@ -1,5 +1,7 @@
 import React, {useEffect, useState} from "react";
 import Button from "@atlaskit/button";
+import EditIcon from '@atlaskit/icon/glyph/edit'
+import AddIcon from '@atlaskit/icon/glyph/add'
 import TableTree, {
     Cell,
     Header,
@@ -15,6 +17,7 @@ export default function HelloWorld() {
     const [displayItems, setDisplayItems] = useState([]);
 
     useEffect(() => {
+        AP.events.emitPublic("ok",['a','b'])
         AP.request({
             url: "/rest/api/3/search?jql=",
             type: "GET",
@@ -62,18 +65,21 @@ export default function HelloWorld() {
     }, [worklogMap]);
 
     const getItems = () => {
+
         let arr = Array.from(worklogMap).map(([k, v]) => {
             console.log(v);
             return {
                 id: k,
                 title: k,
                 description: v.total.toString(),
+                field: 'Add',
                 children: v.worklogs.map((elm) => {
                     return {
                         id: elm.id,
                         title: elm.author.displayName,
                         description: elm.timeSpent,
                         startDate: new Date(elm.started).toLocaleString(),
+                        field: 'Edit'
                     };
                 }),
             };
@@ -101,7 +107,7 @@ export default function HelloWorld() {
                 </Headers>
                 <Rows
                     items={displayItems}
-                    render={({id, title, description, startDate, children = []}) => (
+                    render={({id, title, description, field, startDate, children = []}) => (
                         <Row
                             itemId={id}
                             items={children}
@@ -110,7 +116,6 @@ export default function HelloWorld() {
                             <Cell>
                                 {issueTypes.map(e => {
                                     if (e.issueId === title) {
-                                        console.log("*********************\n",title)
                                         return (
                                             <span key={e.issueId}>
                                                 <img
@@ -124,6 +129,17 @@ export default function HelloWorld() {
                             </Cell>
                             <Cell>{description}</Cell>
                             <Cell>{startDate}</Cell>
+                            <Cell>
+                                {
+                                    <Button
+                                        onClick={() =>{
+                                            AP.dialog.create({
+                                                key: "dialog",
+                                                chrome: false,
+                                            })}}
+                                        iconBefore={field === 'Add' ? (<AddIcon size="small"/>) : (<EditIcon size="small"/>)}></Button>
+                                }
+                            </Cell>
                         </Row>
                     )}
                 />

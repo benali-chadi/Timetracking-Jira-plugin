@@ -20,23 +20,25 @@ export default function WebItem() {
     const [startDate, setStartDate] = useState(null);
     const [isStartDate, setIsStartDate] = useState(true);
     const [sysDate, setSysDate] = useState(new Date().toISOString().slice(0, 16) + "+0100")
-    const [contextIssue, setContextIssue] = useState([])
+    const [contextIssue, setContextIssue] = useState({})
 
-    const [test, setTest] = useState({label: 'REC-1', value: '10008'})
 
     const onClose = () => {
         AP.dialog.close();
     };
 
     useEffect(() => {
+
+
         AP.context.getContext(function (response) {
-            const obj = [{
+            const obj = {
                 label: response.jira.issue.key,
                 value: response.jira.issue.id
-            }]
-            console.log("Response : ",response)
-            console.log("Object : ",obj)
+            }
+            console.log("Response : ", response)
+            console.log("Object : ", obj)
             setContextIssue(obj)
+            setSelectedIssue(obj)
         });
 
         AP.request({
@@ -60,6 +62,7 @@ export default function WebItem() {
     }, []);
 
     useEffect(() => {
+        setStartDate(sysDate)
         if (!startDate) return;
         else setIsStartDate(true);
     }, [startDate]);
@@ -132,10 +135,10 @@ export default function WebItem() {
                         required
                         placeholder={`Select an issue `}
                         options={issues}
-                        defaultValue={issues[0]}
-                        // onChange={(v) => {
-                        //     setSelectedIssue(v.value);
-                        // }}
+                        // defaultValue={contextIssue}
+                        onChange={(v) => {
+                            setSelectedIssue(v.value);
+                        }}
                     />
 
 
