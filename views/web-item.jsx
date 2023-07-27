@@ -1,15 +1,16 @@
 import Button from "@atlaskit/button";
-import React, { useEffect, useState } from "react";
+import React, {useEffect, useState} from "react";
 
 import Modal, {
-  ModalBody,
-  ModalFooter,
-  ModalHeader,
-  ModalTitle,
+    ModalBody,
+    ModalFooter,
+    ModalHeader,
+    ModalTitle,
 } from "@atlaskit/modal-dialog";
 import Select from "@atlaskit/select";
 import TextField from "@atlaskit/textfield";
 import TextArea from "@atlaskit/textarea";
+
 import { DateTimePicker } from "@atlaskit/datetime-picker";
 import getTimespent from "./utils/get-timespent";
 
@@ -45,63 +46,75 @@ export default function WebItem() {
           };
         });
 
-        setIssues(iss);
-      },
-      error: (err) => {
-        console.log("err:", err);
-      },
-    });
-  }, []);
+        AP.request({
+            url: "/rest/api/3/search?jql=",
+            type: "GET",
+            success: (data) => {
+                const parsed = JSON.parse(data);
+                const iss = parsed.issues.map((i) => {
+                    return {
+                        label: i.key,
+                        value: i.id,
+                    };
+                });
+                setIssues(iss);
+            },
+            error: (err) => {
+                console.log("err:", err);
+            },
+        });
 
-  useEffect(() => {
-    if (!startDate) return;
-    else setIsStartDate(true);
-  }, [startDate]);
+    }, []);
 
-  const onSubmit = (e) => {
-    e.preventDefault();
-    if (!startDate) {
-      setIsStartDate(false);
-      return;
-    }
-    const splitedStartDate = startDate.split("+");
-    const dateStart = splitedStartDate[0] + ":00.000+" + splitedStartDate[1];
-    console.log("startDate", dateStart);
+    useEffect(() => {
+        if (!startDate) return;
+        else setIsStartDate(true);
+    }, [startDate]);
 
-    const bodyData = {
-      comment: {
-        content: [
-          {
-            content: [
-              {
-                text: comment,
-                type: "text",
-              },
-            ],
-            type: "paragraph",
-          },
-        ],
-        type: "doc",
-        version: 1,
-      },
-      started: dateStart,
-      timeSpentSeconds: timeSpent * 60 * 60,
+    const onSubmit = (e) => {
+        e.preventDefault();
+        if (!startDate) {
+            setIsStartDate(false);
+            return;
+        }
+        const splitedStartDate = startDate.split("+");
+        const dateStart = splitedStartDate[0] + ":00.000+" + splitedStartDate[1];
+        console.log("startDate", dateStart);
+
+        const bodyData = {
+            comment: {
+                content: [
+                    {
+                        content: [
+                            {
+                                text: comment,
+                                type: "text",
+                            },
+                        ],
+                        type: "paragraph",
+                    },
+                ],
+                type: "doc",
+                version: 1,
+            },
+            started: dateStart,
+            timeSpentSeconds: timeSpent * 60 * 60,
+        };
+
+        AP.request({
+            url: `/rest/api/3/issue/${selectedIssue}/worklog`,
+            type: "POST",
+            data: JSON.stringify(bodyData),
+            contentType: "application/json",
+            success: (res) => {
+                console.log("Created Worklog:", res);
+            },
+            error: (err) => {
+                console.log("err", err);
+            },
+        });
+        AP.dialog.close();
     };
-
-    AP.request({
-      url: `/rest/api/3/issue/${selectedIssue}/worklog`,
-      type: "POST",
-      data: JSON.stringify(bodyData),
-      contentType: "application/json",
-      success: (res) => {
-        console.log("Created Worklog:", res);
-      },
-      error: (err) => {
-        console.log("err", err);
-      },
-    });
-    AP.dialog.close();
-  };
 
   return (
     <Modal onClose={onClose}>
