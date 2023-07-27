@@ -11,6 +11,7 @@ import Select from "@atlaskit/select";
 import TextField from "@atlaskit/textfield";
 import TextArea from "@atlaskit/textarea";
 import { DateTimePicker } from "@atlaskit/datetime-picker";
+import getTimespent from "./utils/get-timespent";
 
 export default function WebItem() {
   const [issues, setIssues] = useState([]);
@@ -19,12 +20,18 @@ export default function WebItem() {
   const [comment, setComment] = useState("");
   const [startDate, setStartDate] = useState(null);
   const [isStartDate, setIsStartDate] = useState(true);
+  const [totalTimeSpent, setTotalTimeSpent] = useState(0);
 
   const onClose = () => {
     AP.dialog.close();
   };
 
   useEffect(() => {
+    AP.user.getCurrentUser(async (user) => {
+      const timespent = await getTimespent(user.atlassianAccountId);
+      console.log("ts", timespent);
+      setTotalTimeSpent(timespent);
+    });
     AP.request({
       url: "/rest/api/3/search?jql=",
       type: "GET",
@@ -126,7 +133,7 @@ export default function WebItem() {
 
           <TextField
             type="number"
-            max={8}
+            max={8 - totalTimeSpent}
             min={1}
             placeholder="Enter time spent in hours"
             isRequired
@@ -156,9 +163,20 @@ export default function WebItem() {
               <p style={{ color: "red" }}>Please select a start date</p>
             )}
           </div>
+          {totalTimeSpent >= 8 && (
+            <p style={{ color: "red" }}>
+              You can't create more than 8 hours a day
+            </p>
+          )}
         </ModalBody>
         <ModalFooter>
-          <Button appearance="primary" type="submit">Create</Button>
+          <Button
+            appearance="primary"
+            type="submit"
+            isDisabled={totalTimeSpent >= 8}
+          >
+            Create
+          </Button>
           <Button onClick={onClose}>Cancel</Button>
         </ModalFooter>
       </form>
