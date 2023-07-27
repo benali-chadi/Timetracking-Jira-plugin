@@ -1,11 +1,11 @@
 import Button from "@atlaskit/button";
-import React, {useEffect, useState} from "react";
+import React, { useEffect, useState } from "react";
 
 import Modal, {
-    ModalBody,
-    ModalFooter,
-    ModalHeader,
-    ModalTitle,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  ModalTitle,
 } from "@atlaskit/modal-dialog";
 import Select from "@atlaskit/select";
 import TextField from "@atlaskit/textfield";
@@ -19,7 +19,9 @@ export default function WebItem() {
   const [selectedIssue, setSelectedIssue] = useState(null);
   const [timeSpent, setTimeSpent] = useState(0);
   const [comment, setComment] = useState("");
-  const [startDate, setStartDate] = useState(null);
+  const [startDate, setStartDate] = useState(
+    new Date().toISOString().slice(0, 16) + "+0100",
+  );
   const [isStartDate, setIsStartDate] = useState(true);
   const [totalTimeSpent, setTotalTimeSpent] = useState(0);
 
@@ -28,93 +30,90 @@ export default function WebItem() {
   };
 
   useEffect(() => {
+    AP.context.getContext(function (response) {
+      const obj = {
+        label: response.jira.issue.key,
+        value: response.jira.issue.id,
+      };
+      console.log("Response : ", response);
+      console.log("Object : ", obj);
+      setSelectedIssue(obj);
+    });
+
     AP.user.getCurrentUser(async (user) => {
       const timespent = await getTimespent(user.atlassianAccountId);
       console.log("ts", timespent);
       setTotalTimeSpent(timespent);
     });
+
     AP.request({
       url: "/rest/api/3/search?jql=",
       type: "GET",
       success: (data) => {
         const parsed = JSON.parse(data);
-
         const iss = parsed.issues.map((i) => {
           return {
             label: i.key,
             value: i.id,
           };
         });
+        setIssues(iss);
+      },
+      error: (err) => {
+        console.log("err:", err);
+      },
+    });
+  }, []);
 
-        AP.request({
-            url: "/rest/api/3/search?jql=",
-            type: "GET",
-            success: (data) => {
-                const parsed = JSON.parse(data);
-                const iss = parsed.issues.map((i) => {
-                    return {
-                        label: i.key,
-                        value: i.id,
-                    };
-                });
-                setIssues(iss);
-            },
-            error: (err) => {
-                console.log("err:", err);
-            },
-        });
+  useEffect(() => {
+    if (!startDate) return;
+    else setIsStartDate(true);
+  }, [startDate]);
 
-    }, []);
+  const onSubmit = (e) => {
+    e.preventDefault();
+    if (!startDate) {
+      setIsStartDate(false);
+      return;
+    }
+    const splitedStartDate = startDate.split("+");
+    const dateStart = splitedStartDate[0] + ":00.000+" + splitedStartDate[1];
+    console.log("startDate", dateStart);
 
-    useEffect(() => {
-        if (!startDate) return;
-        else setIsStartDate(true);
-    }, [startDate]);
-
-    const onSubmit = (e) => {
-        e.preventDefault();
-        if (!startDate) {
-            setIsStartDate(false);
-            return;
-        }
-        const splitedStartDate = startDate.split("+");
-        const dateStart = splitedStartDate[0] + ":00.000+" + splitedStartDate[1];
-        console.log("startDate", dateStart);
-
-        const bodyData = {
-            comment: {
-                content: [
-                    {
-                        content: [
-                            {
-                                text: comment,
-                                type: "text",
-                            },
-                        ],
-                        type: "paragraph",
-                    },
-                ],
-                type: "doc",
-                version: 1,
-            },
-            started: dateStart,
-            timeSpentSeconds: timeSpent * 60 * 60,
-        };
-
-        AP.request({
-            url: `/rest/api/3/issue/${selectedIssue}/worklog`,
-            type: "POST",
-            data: JSON.stringify(bodyData),
-            contentType: "application/json",
-            success: (res) => {
-                console.log("Created Worklog:", res);
-            },
-            error: (err) => {
-                console.log("err", err);
-            },
-        });
-        AP.dialog.close();
+    const bodyData = {
+      comment: {
+        content: [
+          {
+            content: [
+              {
+                text: comment,
+                type: "text",
+              },
+            ],
+            type: "paragraph",
+          },
+        ],
+        type: "doc",
+        version: 1,
+      },
+      started: dateStart,
+      timeSpentSeconds: timeSpent * 60 * 60,
     };
+
+    AP.request({
+      url: `/rest/api/3/issue/${selectedIssue.value}/worklog`,
+      type: "POST",
+      data: JSON.stringify(bodyData),
+      contentType: "application/json",
+      success: (res) => {
+        console.log("Created Worklog:", res);
+      },
+      error: (err) => {
+        console.log("err", err);
+      },
+    });
+    AP.dialog.close();
+  };
 
   return (
     <Modal onClose={onClose}>
@@ -139,8 +138,10 @@ export default function WebItem() {
             required
             placeholder="Select an issue"
             options={issues}
+            value={selectedIssue}
             onChange={(v) => {
-              setSelectedIssue(v.value);
+              console.log("v", v);
+              return setSelectedIssue(v);
             }}
           />
 
@@ -166,9 +167,8 @@ export default function WebItem() {
             <label htmlFor="Start Date">Start Date</label>
             <DateTimePicker
               name="Start Date"
-              timePickerProps={{}}
+              value={startDate}
               onChange={(e) => {
-                console.log(e);
                 return setStartDate(e);
               }}
             />

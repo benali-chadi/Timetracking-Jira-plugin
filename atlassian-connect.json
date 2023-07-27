@@ -2,7 +2,7 @@
   "key": "my-app",
   "name": "My app",
   "description": "My very first app",
-  "baseUrl": "https://95e2-41-137-43-2.ngrok-free.app",
+  "baseUrl": "https://93eb-41-250-67-93.ngrok-free.app",
   "authentication": {
     "type": "jwt"
   },
@@ -50,7 +50,6 @@
       {
         "url": "/item",
         "options": {
-          // "size" bellow defines how the size of the dialog clicked from ANY BUTTON EXCEPT THE "Saisie de temps" BUTTON
           "size": "small",
           "header": {
             "value": "Worklog Form"
@@ -68,22 +67,22 @@
           "webitem",
           "system-present-webitem"
         ],
-//        "conditions": [
-//          {
-//            "condition": "addon_time_tracking_provider_enabled",
-//            "params": {
-//              "addonKey": "latest-project",
-//              "moduleKey": "react-time-tracking"
-//            }
-//          }
-//        ],
+        //        "conditions": [
+        //          {
+        //            "condition": "addon_time_tracking_provider_enabled",
+        //            "params": {
+        //              "addonKey": "latest-project",
+        //              "moduleKey": "react-time-tracking"
+        //            }
+        //          }
+        //        ],
         "target": {
           "type": "dialog",
           "options": {
             //            "height": "400px",
             //            "width": "700px",
             // "size" bellow defines how the size of the dialog clicked from THE "Saisie du temps" BUTTON (webItem)
-            "size": "x-large",
+            "size": "small",
             "chrome": false,
             "key": "dialog"
           }
