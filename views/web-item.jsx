@@ -15,12 +15,15 @@ import {DateTimePicker} from "@atlaskit/datetime-picker";
 export default function WebItem() {
     const [issues, setIssues] = useState([]);
     const [selectedIssue, setSelectedIssue] = useState(null);
+    const [displayedIssue, setDisplayedIssue] = useState(null);
     const [timeSpent, setTimeSpent] = useState(0);
     const [comment, setComment] = useState("");
+    const [logId, setLogId] = useState("");
     const [startDate, setStartDate] = useState(null);
     const [isStartDate, setIsStartDate] = useState(true);
     const [sysDate, setSysDate] = useState(new Date().toISOString().slice(0, 16) + "+0100")
-    const [contextIssue, setContextIssue] = useState({})
+    const [selectedAction, setSelectedAction] = useState(null)
+
 
 
     const onClose = () => {
@@ -28,18 +31,33 @@ export default function WebItem() {
     };
 
     useEffect(() => {
-
-
-        AP.context.getContext(function (response) {
-            const obj = {
-                label: response.jira.issue.key,
-                value: response.jira.issue.id
+        AP.dialog.getCustomData(function (customData) {
+            console.log('*************************\n',customData)
+            setSelectedAction(customData.selectedAction)
+            if(customData.selectedIssue.logId){
+                setSelectedIssue(customData.selectedIssue.data.value)
+                setDisplayedIssue(customData.selectedIssue.data)
+                setComment(customData.selectedIssue.comment)
+                setLogId(customData.selectedIssue.logId)
+                setTimeSpent(parseInt(customData.selectedIssue.description.slice(0,2)))
             }
-            console.log("Response : ", response)
-            console.log("Object : ", obj)
-            setContextIssue(obj)
-            setSelectedIssue(obj)
+            else {
+                setSelectedIssue(customData.selectedIssue.value)
+                setDisplayedIssue(customData.selectedIssue)
+            }
         });
+
+        // For webItem button
+        // AP.context.getContext(function (response) {
+        //     const obj = {
+        //         label: response.jira.issue.key,
+        //         value: response.jira.issue.id
+        //     }
+        //     console.log("Response : ", response)
+        //     console.log("Object : ", obj)
+        //     setContextIssue(obj)
+        //     setSelectedIssue(obj)
+        // });
 
         AP.request({
             url: "/rest/api/3/search?jql=",
@@ -96,24 +114,50 @@ export default function WebItem() {
             started: dateStart,
             timeSpentSeconds: timeSpent * 60 * 60,
         };
+        if(selectedAction=='Add'){
+            AP.request({
+                url: `/rest/api/3/issue/${selectedIssue}/worklog`,
+                type: "POST",
+                data: JSON.stringify(bodyData),
+                contentType: "application/json",
+                success: (res) => {
+                    console.log("Created Worklog:", res);
+                    AP.flag.create({
+                        title: 'Worklog created successfuly.',
+                        body: 'This is a flag.',
+                        type: 'success',
+                        actions: {
+                            'actionkey': 'Click me'
+                        }
+                    });
+                },
+                error: (err) => {
+                    console.log("err", err);
+                },
+            });
+        }
+        else if(selectedAction=='Edit'){
+            AP.request({
+                url: `/rest/api/3/issue/${selectedIssue}/worklog/${logId}`,
+                type: "PUT",
+                data: JSON.stringify(bodyData),
+                contentType: "application/json",
+                success: (res) => {
+                    console.log("Updated Worklog:", res);
+                },
+                error: (err) => {
+                    console.log("err", err);
+                },
+            });
+        }
 
-        AP.request({
-            url: `/rest/api/3/issue/${selectedIssue}/worklog`,
-            type: "POST",
-            data: JSON.stringify(bodyData),
-            contentType: "application/json",
-            success: (res) => {
-                console.log("Created Worklog:", res);
-            },
-            error: (err) => {
-                console.log("err", err);
-            },
-        });
         AP.dialog.close();
     };
 
     return (
+
         <Modal onClose={onClose}>
+
             <form
                 onSubmit={onSubmit}
                 style={{
@@ -122,7 +166,7 @@ export default function WebItem() {
                 }}
             >
                 <ModalHeader>
-                    <ModalTitle>Create worklog</ModalTitle>
+                    <ModalTitle>{selectedAction=='Add'?"Create worklog":"Update worklog"}</ModalTitle>
                 </ModalHeader>
                 <ModalBody
                     style={{
@@ -133,9 +177,10 @@ export default function WebItem() {
                 >
                     <Select
                         required
-                        placeholder={`Select an issue `}
+                        placeholder={'Select an issue'}
                         options={issues}
-                        // defaultValue={contextIssue}
+                        value={displayedIssue}
+                        // defaultValue={selectedIssue}
                         onChange={(v) => {
                             setSelectedIssue(v.value);
                         }}
@@ -144,27 +189,27 @@ export default function WebItem() {
 
                     <TextField
                         type="number"
+                        value={timeSpent}
                         max={8}
-                        min={1}
+                        min={0}
                         placeholder="Enter time spent in hours"
                         isRequired
-                        onChange={(e) => {
-                            return setTimeSpent(e.target.value);
-                        }}
+                        onChange={(e)=> setTimeSpent(e.target.value)}
                     />
 
                     <TextArea
                         style={{marginTop: "10px"}}
                         placeholder="Enter a comment"
+                        value={comment}
                         resize="auto"
-                        onChange={(e) => setComment(e.target.value)}
+                        onChange={(e)=> setComment(e.target.value)}
                     />
 
                     <div>
                         <label htmlFor="Start Date">Start Date</label>
                         <DateTimePicker
                             name="Start Date"
-                            defaultValue={sysDate}
+                            value={sysDate}
                             timePickerProps={{}}
                             onChange={(e) => {
                                 // console.log(e);

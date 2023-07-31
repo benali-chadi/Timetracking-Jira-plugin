@@ -15,9 +15,12 @@ export default function HelloWorld() {
     const [issueTypes, setIssueTypes] = useState([])
     const [worklogMap, setWorklogMap] = useState(new Map());
     const [displayItems, setDisplayItems] = useState([]);
+    const [selectedIssue, setSelectedIssue] = useState(null)
+    const [selectedAction, setSelectedAction] = useState(null)
+
 
     useEffect(() => {
-        AP.events.emitPublic("ok",['a','b'])
+
         AP.request({
             url: "/rest/api/3/search?jql=",
             type: "GET",
@@ -39,7 +42,6 @@ export default function HelloWorld() {
                         type: "GET",
                         success: (data) => {
                             const parsedWorklog = JSON.parse(data);
-                            // worklogMap.set(element.key,{nam})
                             setWorklogMap((prev) => {
                                 let newMap = new Map(prev);
                                 newMap.set(element.key, parsedWorklog);
@@ -63,6 +65,28 @@ export default function HelloWorld() {
             setDisplayItems(getItems());
         }
     }, [worklogMap]);
+    useEffect(()=>{
+        if(selectedIssue){
+            console.log('1ST',selectedIssue)
+            AP.dialog.create({
+                key: "dialog",
+                chrome: false,
+                customData: {selectedIssue,selectedAction}
+            });
+        }
+
+    },[selectedIssue])
+    const handleClick = (id,action,parent,comment,logId,description) => {
+        // Update the state using the setMyStateValue function
+        if(!parent)
+            setSelectedIssue({label: id,value:id});
+        else
+            setSelectedIssue({comment,logId,description,data:{label: parent,value:parent}})
+        setSelectedAction(action)
+
+        console.log('ISSUE :',selectedIssue)
+        console.log('ACTION :',selectedAction)
+    };
 
     const getItems = () => {
 
@@ -72,14 +96,16 @@ export default function HelloWorld() {
                 id: k,
                 title: k,
                 description: v.total.toString(),
-                field: 'Add',
+                action: 'Add',
                 children: v.worklogs.map((elm) => {
                     return {
-                        id: elm.id,
+                        parent:k,
+                        logId: elm.id,
                         title: elm.author.displayName,
+                        comment:(elm.comment)?elm.comment.content[0].content[0].text:null,
                         description: elm.timeSpent,
                         startDate: new Date(elm.started).toLocaleString(),
-                        field: 'Edit'
+                        action: 'Edit'
                     };
                 }),
             };
@@ -87,8 +113,15 @@ export default function HelloWorld() {
         return arr;
     };
 
+
+
     return (
         <>
+            {
+                // console.log('B E F OOOOOOOOOOOOOOOOOOO')
+                // AP.events.emit('custom-event')
+                // console.log('A F T EEEEEEEEEEEEEEEEEEE')
+            }
             <Button
                 appearance="primary"
                 onClick={() =>
@@ -97,6 +130,7 @@ export default function HelloWorld() {
                         chrome: false,
                     })}
             >
+
                 Create Worklog
             </Button>
             <TableTree>
@@ -107,7 +141,7 @@ export default function HelloWorld() {
                 </Headers>
                 <Rows
                     items={displayItems}
-                    render={({id, title, description, field, startDate, children = []}) => (
+                    render={({id, title, description, parent, action,comment,logId, startDate, children = []}) => (
                         <Row
                             itemId={id}
                             items={children}
@@ -129,15 +163,15 @@ export default function HelloWorld() {
                             </Cell>
                             <Cell>{description}</Cell>
                             <Cell>{startDate}</Cell>
+                            <Cell>{comment}</Cell>
                             <Cell>
                                 {
                                     <Button
-                                        onClick={() =>{
-                                            AP.dialog.create({
-                                                key: "dialog",
-                                                chrome: false,
-                                            })}}
-                                        iconBefore={field === 'Add' ? (<AddIcon size="small"/>) : (<EditIcon size="small"/>)}></Button>
+                                        onClick={() => {
+                                            handleClick(id,action,parent,comment,logId,description)
+                                        }}
+                                        iconBefore={action === 'Add' ? (<AddIcon size="small"/>) : (
+                                            <EditIcon size="small"/>)}></Button>
                                 }
                             </Cell>
                         </Row>
