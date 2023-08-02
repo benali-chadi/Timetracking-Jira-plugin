@@ -21,8 +21,10 @@
   "dependencies": {
     "@atlaskit/button": "^15.1.0",
     "@atlaskit/datetime-picker": "^12.7.7",
+    "@atlaskit/form": "^8.11.9",
     "@atlaskit/icon": "^21.12.6",
     "@atlaskit/modal-dialog": "^12.6.4",
+    "@atlaskit/progress-bar": "^0.6.4",
     "@atlaskit/section-message": "^6.3.9",
     "@atlaskit/select": "^16.5.7",
     "@atlaskit/table-tree": "^9.6.0",

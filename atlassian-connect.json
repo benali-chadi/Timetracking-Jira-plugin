@@ -1,8 +1,8 @@
 {
   "key": "my-app",
-  "name": "My app",
-  "description": "My very first app",
-  "baseUrl": "https://95e2-41-137-43-2.ngrok-free.app",
+  "name": "Jira Time Tracking Plugin",
+  "description": "Plugin",
+  "baseUrl": "https://7f2b-197-145-197-200.ngrok-free.app",
   "authentication": {
     "type": "jwt"
   },

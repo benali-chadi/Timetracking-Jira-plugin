@@ -20,7 +20,6 @@ export default function HelloWorld() {
 
 
     useEffect(() => {
-
         AP.request({
             url: "/rest/api/3/search?jql=",
             type: "GET",
@@ -72,16 +71,29 @@ export default function HelloWorld() {
                 key: "dialog",
                 chrome: false,
                 customData: {selectedIssue,selectedAction}
-            });
+            }).on("close",(output)=>{
+                if(!output)
+                    return;
+                if(output.output!='none') {
+                    const flag = AP.flag.create({
+                        title: ' ',
+                        body: `Worklog ${output.output} successfuly.`,
+                        type: 'success'
+                    });
+                    setTimeout(()=>{
+                        flag.close();
+                    }, 3000);
+                }
+            })
         }
 
     },[selectedIssue])
-    const handleClick = (id,action,parent,comment,logId,description) => {
+    const handleClick = (id,action,parent,comment,logId,description,startDate) => {
         // Update the state using the setMyStateValue function
         if(!parent)
             setSelectedIssue({label: id,value:id});
         else
-            setSelectedIssue({comment,logId,description,data:{label: parent,value:parent}})
+            setSelectedIssue({comment,logId,description,startDate,data:{label: parent,value:parent}})
         setSelectedAction(action)
 
         console.log('ISSUE :',selectedIssue)
@@ -102,9 +114,9 @@ export default function HelloWorld() {
                         parent:k,
                         logId: elm.id,
                         title: elm.author.displayName,
-                        comment:(elm.comment)?elm.comment.content[0].content[0].text:null,
+                        comment:(elm.comment?(elm.comment.content[0]?elm.comment.content[0].content[0].text:null):null ),
                         description: elm.timeSpent,
-                        startDate: new Date(elm.started).toLocaleString(),
+                        startDate: new Date(elm.started).toISOString().slice(0, 16) + "+0100",
                         action: 'Edit'
                     };
                 }),
@@ -141,7 +153,7 @@ export default function HelloWorld() {
                 </Headers>
                 <Rows
                     items={displayItems}
-                    render={({id, title, description, parent, action,comment,logId, startDate, children = []}) => (
+                    render={({id, title, description, parent,action,comment,logId, startDate, children = []}) => (
                         <Row
                             itemId={id}
                             items={children}
@@ -162,13 +174,14 @@ export default function HelloWorld() {
                                 {title}
                             </Cell>
                             <Cell>{description}</Cell>
-                            <Cell>{startDate}</Cell>
+                            {/*<Cell>{new Date(startDate).toLocaleString()}</Cell>*/}
+                            <Cell>{startDate?new Date(startDate).toLocaleString():startDate}</Cell>
                             <Cell>{comment}</Cell>
                             <Cell>
                                 {
                                     <Button
                                         onClick={() => {
-                                            handleClick(id,action,parent,comment,logId,description)
+                                            handleClick(id,action,parent,comment,logId,description,startDate)
                                         }}
                                         iconBefore={action === 'Add' ? (<AddIcon size="small"/>) : (
                                             <EditIcon size="small"/>)}></Button>
