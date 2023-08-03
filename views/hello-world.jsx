@@ -17,6 +17,7 @@ export default function HelloWorld() {
     const [displayItems, setDisplayItems] = useState([]);
     const [selectedIssue, setSelectedIssue] = useState(null)
     const [selectedAction, setSelectedAction] = useState(null)
+    const [currentMonth, setCurrentMonth] = useState(new Date().getMonth())
 
 
     useEffect(() => {
@@ -64,40 +65,40 @@ export default function HelloWorld() {
             setDisplayItems(getItems());
         }
     }, [worklogMap]);
-    useEffect(()=>{
-        if(selectedIssue){
-            console.log('1ST',selectedIssue)
+    useEffect(() => {
+        if (selectedIssue) {
+            // console.log('1ST',selectedIssue)
             AP.dialog.create({
                 key: "dialog",
                 chrome: false,
-                customData: {selectedIssue,selectedAction}
-            }).on("close",(output)=>{
-                if(!output)
+                customData: {selectedIssue, selectedAction}
+            }).on("close", (output) => {
+                if (!output)
                     return;
-                if(output.output!='none') {
+                if (output.output != 'none') {
                     const flag = AP.flag.create({
                         title: ' ',
                         body: `Worklog ${output.output} successfuly.`,
                         type: 'success'
                     });
-                    setTimeout(()=>{
+                    setTimeout(() => {
                         flag.close();
                     }, 3000);
                 }
             })
         }
 
-    },[selectedIssue])
-    const handleClick = (id,action,parent,comment,logId,description,startDate) => {
+    }, [selectedIssue])
+    const handleClick = (id, action, parent, comment, logId, description, startDate) => {
         // Update the state using the setMyStateValue function
-        if(!parent)
-            setSelectedIssue({label: id,value:id});
+        if (!parent)
+            setSelectedIssue({label: id, value: id});
         else
-            setSelectedIssue({comment,logId,description,startDate,data:{label: parent,value:parent}})
+            setSelectedIssue({comment, logId, description, startDate, data: {label: parent, value: parent}})
         setSelectedAction(action)
 
-        console.log('ISSUE :',selectedIssue)
-        console.log('ACTION :',selectedAction)
+        console.log('ISSUE :', selectedIssue)
+        console.log('ACTION :', selectedAction)
     };
 
     const getItems = () => {
@@ -111,10 +112,10 @@ export default function HelloWorld() {
                 action: 'Add',
                 children: v.worklogs.map((elm) => {
                     return {
-                        parent:k,
+                        parent: k,
                         logId: elm.id,
                         title: elm.author.displayName,
-                        comment:(elm.comment?(elm.comment.content[0]?elm.comment.content[0].content[0].text:null):null ),
+                        comment: (elm.comment ? (elm.comment.content[0] ? elm.comment.content[0].content[0].text : null) : null),
                         description: elm.timeSpent,
                         startDate: new Date(elm.started).toISOString().slice(0, 16) + "+0100",
                         action: 'Edit'
@@ -126,14 +127,10 @@ export default function HelloWorld() {
     };
 
 
-
     return (
         <>
-            {
-                // console.log('B E F OOOOOOOOOOOOOOOOOOO')
-                // AP.events.emit('custom-event')
-                // console.log('A F T EEEEEEEEEEEEEEEEEEE')
-            }
+            {currentMonth}
+            {console.log(currentMonth)}
             <Button
                 appearance="primary"
                 onClick={() =>
@@ -153,7 +150,7 @@ export default function HelloWorld() {
                 </Headers>
                 <Rows
                     items={displayItems}
-                    render={({id, title, description, parent,action,comment,logId, startDate, children = []}) => (
+                    render={({id, title, description, parent, action, comment, logId, startDate, children = []}) => (
                         <Row
                             itemId={id}
                             items={children}
@@ -175,16 +172,17 @@ export default function HelloWorld() {
                             </Cell>
                             <Cell>{description}</Cell>
                             {/*<Cell>{new Date(startDate).toLocaleString()}</Cell>*/}
-                            <Cell>{startDate?new Date(startDate).toLocaleString():startDate}</Cell>
+                            <Cell>{startDate ? new Date(startDate).toLocaleString() : startDate}</Cell>
                             <Cell>{comment}</Cell>
                             <Cell>
                                 {
                                     <Button
+                                        isDisabled={(new Date(startDate).getMonth()!==currentMonth) && action=='Edit'}
                                         onClick={() => {
-                                            handleClick(id,action,parent,comment,logId,description,startDate)
+                                            handleClick(id, action, parent, comment, logId, description, startDate)
                                         }}
-                                        iconBefore={action === 'Add' ? (<AddIcon size="small"/>) : (
-                                            <EditIcon size="small"/>)}></Button>
+                                        iconBefore={action === 'Add' ? (<AddIcon size="small"/>) : (<EditIcon size="small"/>)}>
+                                    </Button>
                                 }
                             </Cell>
                         </Row>

@@ -83,7 +83,7 @@
             //            "height": "400px",
             //            "width": "700px",
             // "size" bellow defines how the size of the dialog clicked from THE "Saisie du temps" BUTTON (webItem)
-            "size": "x-large",
+            "size": "small",
             "chrome": false,
             "key": "dialog"
           }

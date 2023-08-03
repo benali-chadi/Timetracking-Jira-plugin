@@ -15,7 +15,6 @@ import getTimespent from "./utils/get-timespent";
 import ProgressBar from '@atlaskit/progress-bar';
 
 
-
 export default function WebItem() {
     const [issues, setIssues] = useState([]);
     const [selectedIssue, setSelectedIssue] = useState(null);
@@ -25,9 +24,10 @@ export default function WebItem() {
     const [comment, setComment] = useState("");
     const [logId, setLogId] = useState("");
 
-    const [startDate, setStartDate] = useState(new Date().toString());
+    const [startDate, setStartDate] = useState(new Date().toISOString().slice(0, 16) + "+0100");
     // const [isStartDate, setIsStartDate] = useState(true);
     const [totalTimeSpent, setTotalTimeSpent] = useState(0);
+    const [oldVal,setOldVal]=useState(0)
 
     const [selectedAction, setSelectedAction] = useState(null)
     const [output, setOutput] = useState('none')
@@ -46,29 +46,31 @@ export default function WebItem() {
                 setSelectedIssue(customData.selectedIssue.data.value)
                 setDisplayedIssue(customData.selectedIssue.data)
                 setTimeSpent(parseInt(customData.selectedIssue.description.slice(0, 2)))
+                setOldVal(parseInt(customData.selectedIssue.description.slice(0, 2)))
                 setComment(customData.selectedIssue.comment)
                 setLogId(customData.selectedIssue.logId)
                 setStartDate(customData.selectedIssue.startDate)
-                setOutput('updated')
-            } else {
-                setStartDate(new Date().toISOString().slice(0, 16) + "+0100")
+                setOutput('edited')
+            } else if(customData) {
                 setSelectedIssue(customData.selectedIssue.value)
                 setDisplayedIssue(customData.selectedIssue)
                 setOutput('created')
             }
         });
+        setOutput('created')
+        setSelectedAction('Indep')
 
         // For webItem button
-        // AP.context.getContext(function (response) {
-        //     const obj = {
-        //         label: response.jira.issue.key,
-        //         value: response.jira.issue.id
-        //     }
-        //     console.log("Response : ", response)
-        //     console.log("Object : ", obj)
-        //     setContextIssue(obj)
-        //     setSelectedIssue(obj)
-        // });
+        AP.context.getContext(function (response) {
+            const obj = {
+                label: response.jira.issue.key,
+                value: response.jira.issue.id
+            }
+            console.log("Response : ", response)
+            console.log("Object : ", obj)
+            setSelectedIssue(obj)
+            setDisplayedIssue(obj.value)
+        });
 
         AP.request({
             url: "/rest/api/3/search?jql=",
@@ -90,23 +92,21 @@ export default function WebItem() {
 
     }, []);
 
-    useEffect(()=>{
+    useEffect(() => {
         AP.user.getCurrentUser(async (user) => {
-            if (selectedAction=='Add') {
-                console.log(startDate)
-                const t1 = await getTimespent(user.atlassianAccountId,null);
-                console.log("t1 : ",t1)
-                setTotalTimeSpent(t1);
-            } else if (selectedAction=='Edit'){
-                console.log("Start date: ",startDate)
-                console.log("Start date on Date() : ",new Date(startDate))
-                const t2 = await getTimespent(user.atlassianAccountId,new Date(startDate));
-                console.log("t2 : ",t2)
-                setTotalTimeSpent(t2);
-            }
+            // if (selectedAction=='Add') {
+            const t1 = await getTimespent(user.atlassianAccountId, new Date(startDate));
+            console.log("t1 : ", t1)
+            setTotalTimeSpent(t1);
+            // } else if (selectedAction=='Edit'){
+            //     console.log("Start date: ",startDate)
+            //     console.log("Start date on Date() : ",new Date(startDate))
+            //     const t2 = await getTimespent(user.atlassianAccountId,new Date(startDate));
+            //     console.log("t2 : ",t2)
+            //     setTotalTimeSpent(t2);
+            // }
         });
-    },[selectedAction,startDate])
-
+    }, [startDate])
 
 
     const onSubmit = async (e) => {
@@ -119,7 +119,7 @@ export default function WebItem() {
         const dateStart = splitedStartDate[0] + ":00.000+" + splitedStartDate[1];
         console.log("startDate", dateStart);
 
-        if (selectedAction == 'Add') {
+        if (selectedAction == 'Add' || selectedAction=='Indep') {
             AP.request({
                 url: `/rest/api/3/issue/${selectedIssue}/worklog`,
                 type: "POST",
@@ -160,7 +160,7 @@ export default function WebItem() {
                             {
                                 content: [
                                     {
-                                        text: comment,
+                                        text: comment?comment:'',
                                         type: "text",
                                     },
                                 ],
@@ -174,19 +174,20 @@ export default function WebItem() {
                 }),
                 contentType: "application/json",
                 success: (res) => {
-                    console.log("Updated Worklog:", res);
+                    console.log("Edited Worklog:", res);
                 },
                 error: (err) => {
                     console.log("err", err);
                 },
             });
         }
+        console.log('reached !!')
         AP.dialog.close({output});
     };
 
     return (
 
-        <Modal onClose={onClose}>
+        <Modal onClose={onClose} width={'medium'}>
 
             <form
                 onSubmit={onSubmit}
@@ -196,7 +197,7 @@ export default function WebItem() {
                 }}
             >
                 <ModalHeader>
-                    <ModalTitle>{selectedAction == 'Add' ? "Create worklog" : "Update worklog"}</ModalTitle>
+                    <ModalTitle>{selectedAction == 'Edit' ? "Edit worklog" : "Create worklog"}</ModalTitle>
                 </ModalHeader>
                 <ModalBody
                     style={{
@@ -207,7 +208,7 @@ export default function WebItem() {
                 >
                     <label>Issues</label>
                     <Select
-                        isDisabled={selectedAction=='Edit'}
+                        isDisabled={selectedAction == 'Edit'}
                         required
                         placeholder={'Select an issue'}
                         options={issues}
@@ -215,37 +216,40 @@ export default function WebItem() {
                         // defaultValue={selectedIssue}
                         onChange={(v) => {
                             setSelectedIssue(v.value);
+                            setDisplayedIssue(v)
                         }}
                     />
 
-                    <label style={{marginTop:'30px'}}>Time spent</label>
+                    <label style={{marginTop: '30px'}}>Time spent</label>
                     <TextField
                         type="number"
                         value={timeSpent}
-                        max={8 - totalTimeSpent}
+                        max={selectedAction=='Add'?(8 - totalTimeSpent):(8 - totalTimeSpent+oldVal)}
+                        // max={8 - totalTimeSpent}
                         min={0}
                         placeholder="Enter time spent in hours"
                         isRequired
                         onChange={(e) => setTimeSpent(e.target.value)}
                     />
                     <ProgressBar
+                        style={{marginTop:'10px'}}
                         ariaLabel="Done: 6 of 10 issues"
-                        value={(Number(timeSpent)+totalTimeSpent)/8}
+                        value={selectedAction=='Add'?((Number(timeSpent) + totalTimeSpent) / 8):((Number(timeSpent)+totalTimeSpent-oldVal)/8)}
                     />
-
-                    {<p>You have {8-totalTimeSpent-timeSpent} hours left on this start date</p>}
-                    <label style={{marginTop:'30px'}}>Comment</label>
+                    {<p>You have {selectedAction=='Add'?(8 - timeSpent - totalTimeSpent):(8-totalTimeSpent-Number(timeSpent)+oldVal)} hours left on this start date</p>}
+                    <label style={{marginTop: '30px'}}>Comment</label>
                     <TextArea
                         placeholder="Enter a comment"
                         value={comment}
                         resize="auto"
                         onChange={(e) => setComment(e.target.value)}
                     />
+                    {<div>comment: {comment}</div>}
 
                     <div>
-                        <label htmlFor="Start Date" style={{marginTop:'10px'}}>Start Date</label>
+                        <label htmlFor="Start Date" style={{marginTop: '10px'}}>Start Date</label>
                         <DateTimePicker
-                            isDisabled={selectedAction=='Edit'}
+                            isDisabled={selectedAction == 'Edit'}
                             name="Start Date"
                             value={startDate}
                             timePickerProps={{}}
@@ -259,14 +263,14 @@ export default function WebItem() {
                         {/*    <p style={{color: "red"}}>Please select a start date</p>*/}
                         {/*)}*/}
                     </div>
-                    {totalTimeSpent >= 8 && (
+                    {totalTimeSpent >= 8&& (
                         <p style={{color: "red"}}>
-                            You can't create more than 8 hours a day
+                            You cant create more than 8 hours a day
                         </p>
                     )}
                 </ModalBody>
                 <ModalFooter>
-                    <Button appearance="primary" type="submit" isDisabled={totalTimeSpent >= 8}>Create</Button>
+                    <Button appearance="primary" type="submit" isDisabled={selectedAction=='Add'?(totalTimeSpent >= 8):(8-totalTimeSpent+Number(timeSpent)+oldVal>8)}>Create</Button>
                     <Button onClick={onClose}>Cancel</Button>
                 </ModalFooter>
             </form>
