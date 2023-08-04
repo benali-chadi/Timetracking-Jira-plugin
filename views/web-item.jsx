@@ -249,10 +249,10 @@ export default function WebItem() {
                     <div>
                         <label htmlFor="Start Date" style={{marginTop: '10px'}}>Start Date</label>
                         <DateTimePicker
+                            datePickerProps={{ minDate: new Date().toISOString().slice(0,8) + "01" }}
                             isDisabled={selectedAction == 'Edit'}
                             name="Start Date"
                             value={startDate}
-                            timePickerProps={{}}
                             required
                             onChange={(e) => {
                                 // console.log(e);
