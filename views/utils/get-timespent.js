@@ -11,12 +11,10 @@ function compareDates(d1, d2) {
     return true;
 }
 
-
-
 export default async function getTimespent(userId, date) {
     const bodyData = {
         fields: ["worklog", "assignee", "issueType"],
-        // jql: `assignee = ${userId}`,
+        jql: `assignee = ${userId}`,
     };
 
     let data = await AP.request({

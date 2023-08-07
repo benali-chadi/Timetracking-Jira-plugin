@@ -1,7 +1,8 @@
 import React, {useEffect, useState} from "react";
 import Button from "@atlaskit/button";
-import EditIcon from '@atlaskit/icon/glyph/edit'
-import AddIcon from '@atlaskit/icon/glyph/add'
+import EditIcon from '@atlaskit/icon/glyph/edit';
+import AddIcon from '@atlaskit/icon/glyph/add';
+import TrashIcon from '@atlaskit/icon/glyph/trash';
 import TableTree, {
     Cell,
     Header,
@@ -85,6 +86,7 @@ export default function HelloWorld() {
                         flag.close();
                     }, 3000);
                 }
+                AP.navigator.reload();
             })
         }
 
@@ -99,6 +101,21 @@ export default function HelloWorld() {
 
         console.log('ISSUE :', selectedIssue)
         console.log('ACTION :', selectedAction)
+    };
+
+    const handleDelete = (parent, logId) => {
+        AP.request({
+            url: `/rest/api/3/issue/${parent}/worklog/${logId}`,
+            type: 'DELETE',
+            success: function (responseText) {
+                console.log(responseText);
+            },
+            error: function (err) {
+                console.log(err);
+                console.log("********************")
+            }
+        });
+        AP.navigator.reload();
     };
 
     const getItems = () => {
@@ -175,14 +192,20 @@ export default function HelloWorld() {
                             <Cell>{startDate ? new Date(startDate).toLocaleString() : startDate}</Cell>
                             <Cell>{comment}</Cell>
                             <Cell>
-                                {
-                                    <Button
-                                        isDisabled={(new Date(startDate).getMonth()!==currentMonth) && action=='Edit'}
-                                        onClick={() => {
-                                            handleClick(id, action, parent, comment, logId, description, startDate)
-                                        }}
-                                        iconBefore={action === 'Add' ? (<AddIcon size="small"/>) : (<EditIcon size="small"/>)}>
-                                    </Button>
+                                <Button
+                                    isDisabled={(new Date(startDate).getMonth() !== currentMonth) && action == 'Edit'}
+                                    onClick={() => {
+                                        handleClick(id, action, parent, comment, logId, description, startDate)
+                                    }}
+                                    iconBefore={action === 'Add' ? (<AddIcon size="small"/>) : (
+                                        <EditIcon size="small"/>)}>
+                                </Button>
+                                {parent && (<Button
+                                    iconBefore={<TrashIcon size="small"/>}
+                                    onClick={() => {
+                                        handleDelete(parent, logId)
+                                    }}>
+                                    </Button>)
                                 }
                             </Cell>
                         </Row>

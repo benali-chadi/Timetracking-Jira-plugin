@@ -2,7 +2,6 @@
 *.idea
 .DS_Store
 node_modules
-atlassian-connect.json
 *.pem
 credentials.json
 .cache

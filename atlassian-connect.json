@@ -2,7 +2,7 @@
   "key": "my-app",
   "name": "Jira Time Tracking Plugin",
   "description": "Plugin",
-  "baseUrl": "https://7f2b-197-145-197-200.ngrok-free.app",
+  "baseUrl": "https://fb78-197-145-197-200.ngrok-free.app",
   "authentication": {
     "type": "jwt"
   },
@@ -14,7 +14,8 @@
   },
   "scopes": [
     "READ",
-    "WRITE"
+    "WRITE",
+    "DELETE"
   ],
   "apiMigrations": {
     "signed-install": true
