@@ -86,7 +86,7 @@ export default function HelloWorld() {
                         flag.close();
                     }, 3000);
                 }
-                AP.navigator.reload();
+                // AP.navigator.reload();
             })
         }
 
@@ -115,7 +115,15 @@ export default function HelloWorld() {
                 console.log("********************")
             }
         });
-        AP.navigator.reload();
+        const parentIndex = displayItems.findIndex(obj => obj.id === parent);
+
+        if (parentIndex !== -1) {
+            let childIndexToDelete = displayItems[parentIndex].children.findIndex(child => child.logId === logId);
+
+            if (childIndexToDelete !== -1) {
+                displayItems[parentIndex].children.splice(childIndexToDelete, 1);
+            }
+        }
     };
 
     const getItems = () => {
@@ -133,7 +141,7 @@ export default function HelloWorld() {
                         logId: elm.id,
                         title: elm.author.displayName,
                         comment: (elm.comment ? (elm.comment.content[0] ? elm.comment.content[0].content[0].text : null) : null),
-                        description: elm.timeSpent,
+                        description: elm.timeSpentSeconds/3600,
                         startDate: new Date(elm.started).toISOString().slice(0, 16) + "+0100",
                         action: 'Edit'
                     };
@@ -146,8 +154,6 @@ export default function HelloWorld() {
 
     return (
         <>
-            {currentMonth}
-            {console.log(currentMonth)}
             <Button
                 appearance="primary"
                 onClick={() =>
@@ -156,7 +162,6 @@ export default function HelloWorld() {
                         chrome: false,
                     })}
             >
-
                 Create Worklog
             </Button>
             <TableTree>
@@ -164,10 +169,23 @@ export default function HelloWorld() {
                     <Header width={300}>Issues</Header>
                     <Header width={300}>Time Spent</Header>
                     <Header width={300}>Start Date</Header>
+                    {/*<Header width={300}>Comment</Header>*/}
+                    <Header width={300}>Author</Header>
+                    <Header width={300}>Update Author</Header>
                 </Headers>
                 <Rows
                     items={displayItems}
-                    render={({id, title, description, parent, action, comment, logId, startDate, children = []}) => (
+                    render={({
+                                 id,
+                                 title,
+                                 description,
+                                 parent,
+                                 action,
+                                 comment,
+                                 logId,
+                                 startDate,
+                                 children = []
+                             }) => (
                         <Row
                             itemId={id}
                             items={children}
@@ -187,7 +205,7 @@ export default function HelloWorld() {
                                 })}
                                 {title}
                             </Cell>
-                            <Cell>{description}</Cell>
+                            <Cell>{parent?(description!=8?(description+'h'):(description+'h (1 day)')):(description)}</Cell>
                             {/*<Cell>{new Date(startDate).toLocaleString()}</Cell>*/}
                             <Cell>{startDate ? new Date(startDate).toLocaleString() : startDate}</Cell>
                             <Cell>{comment}</Cell>
@@ -205,7 +223,7 @@ export default function HelloWorld() {
                                     onClick={() => {
                                         handleDelete(parent, logId)
                                     }}>
-                                    </Button>)
+                                </Button>)
                                 }
                             </Cell>
                         </Row>

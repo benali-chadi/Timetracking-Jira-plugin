@@ -29,8 +29,9 @@ export default function WebItem() {
     const [totalTimeSpent, setTotalTimeSpent] = useState(0);
     const [oldVal, setOldVal] = useState(0)
 
-    const [selectedAction, setSelectedAction] = useState(null)
+    const [selectedAction, setSelectedAction] = useState('Indep')
     const [output, setOutput] = useState('none')
+    const [accId,setAccId] = useState('')
 
 
     const onClose = () => {
@@ -40,13 +41,29 @@ export default function WebItem() {
     useEffect(() => {
         // For the generalPages
         AP.dialog.getCustomData(function (customData) {
-            console.log('*************************\n', customData)
+
+            if(!customData){
+                // For webItem button
+                setStartDate(new Date().toISOString().slice(0, 16) + "+0100")
+                AP.context.getContext(function (response) {
+                    const obj = {
+                        label: response.jira.issue.key,
+                        value: response.jira.issue.id
+                    }
+                    console.log("Response : ", response)
+                    console.log("Object : ", obj)
+                    setSelectedIssue(obj.value)
+                    setDisplayedIssue(obj)
+                });
+            }
             setSelectedAction(customData.selectedAction)
             if (customData.selectedIssue.logId) {
                 setSelectedIssue(customData.selectedIssue.data.value)
                 setDisplayedIssue(customData.selectedIssue.data)
-                setTimeSpent(parseInt(customData.selectedIssue.description.slice(0, 2)))
-                setOldVal(parseInt(customData.selectedIssue.description.slice(0, 2)))
+                // setTimeSpent(parseInt(customData.selectedIssue.description.slice(0, 2)))
+                // setOldVal(parseInt(customData.selectedIssue.description.slice(0, 2)))
+                setTimeSpent(customData.selectedIssue.description)
+                setOldVal(customData.selectedIssue.description)
                 setComment(customData.selectedIssue.comment)
                 setLogId(customData.selectedIssue.logId)
                 setStartDate(customData.selectedIssue.startDate)
@@ -56,24 +73,11 @@ export default function WebItem() {
                 setSelectedIssue(customData.selectedIssue.value)
                 setDisplayedIssue(customData.selectedIssue)
                 setOutput('created')
-            } else {
-                setStartDate(new Date().toISOString().slice(0, 16) + "+0100")
+
             }
+
         });
         setOutput('created')
-        setSelectedAction('Indep')
-
-        // For webItem button
-        AP.context.getContext(function (response) {
-            const obj = {
-                label: response.jira.issue.key,
-                value: response.jira.issue.id
-            }
-            console.log("Response : ", response)
-            console.log("Object : ", obj)
-            setSelectedIssue(obj)
-            setDisplayedIssue(obj.value)
-        });
 
         AP.request({
             url: "/rest/api/3/search?jql=",
@@ -99,6 +103,8 @@ export default function WebItem() {
         if (startDate != null) {
             AP.user.getCurrentUser(async (user) => {
                 // if (selectedAction=='Add') {
+                console.log(user)
+                setAccId(user.atlassianAccountId)
                 const t1 = await getTimespent(user.atlassianAccountId, new Date(startDate));
                 console.log("t1 : ", t1)
                 setTotalTimeSpent(t1);

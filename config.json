@@ -34,11 +34,11 @@
     //
     // To configure PostgreSQL, the following can be used:
     //
-    //   "store": {
-    //     "adapter": "sequelize",
-    //     "dialect": "postgres",
-    //     "url": "postgres://localhost/my_app_database"
-    //   },
+//       "store": {
+//         "adapter": "sequelize",
+//         "dialect": "postgres",
+//         "url": "postgres://postgres:Readmyredmi7@localhost:5432/jira-timesheet"
+//       }
     //
     // An appropriate DB driver for Sequelize is required for storage other than memory.
     // For PostgreSQL, run the following command:
