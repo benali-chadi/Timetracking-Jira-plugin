@@ -12,7 +12,7 @@ import TableTree, {
 } from "@atlaskit/table-tree";
 
 
-export default function HelloWorld() {
+export default function MyWork() {
     const [issues, setIssues] = useState([]);
     const [issueTypes, setIssueTypes] = useState([])
     const [worklogMap, setWorklogMap] = useState(new Map());
@@ -20,46 +20,63 @@ export default function HelloWorld() {
     const [selectedIssue, setSelectedIssue] = useState(null)
     const [selectedAction, setSelectedAction] = useState(null)
     const [currentMonth, setCurrentMonth] = useState(new Date().getMonth())
+    const [accId, setAccId] = useState(null)
+
+
 
     useEffect(() => {
-        AP.request({
-            url: "/rest/api/3/search?jql=",
-            type: "GET",
-            success: (data) => {
-                const parsed = JSON.parse(data);
-                setIssues(parsed.issues);
-                setIssueTypes(parsed.issues.map((e) => {
-                    return {
-                        issueId: e.key,
-                        issueType: {
-                            name: e.fields.issuetype.name,
-                            iconUrl: e.fields.issuetype.iconUrl
+        AP.user.getCurrentUser(async (user) => {
+            setAccId(user.atlassianAccountId)
+        })
+    },[]);
+    useEffect(() => {
+        if(accId!=null){
+            AP.request({
+                url: "/rest/api/3/search?jql=",
+                type: "GET",
+                success: (data) => {
+                    const parsed = JSON.parse(data);
+                    setIssues(parsed.issues);
+                    setIssueTypes(parsed.issues.map((e) => {
+                        return {
+                            issueId: e.key,
+                            issueType: {
+                                name: e.fields.issuetype.name,
+                                iconUrl: e.fields.issuetype.iconUrl
+                            }
                         }
-                    }
-                }))
-                parsed.issues.forEach((element) => {
-                    AP.request({
-                        url: `/rest/api/3/issue/${element.key}/worklog`,
-                        type: "GET",
-                        success: (data) => {
-                            const parsedWorklog = JSON.parse(data);
-                            setWorklogMap((prev) => {
-                                let newMap = new Map(prev);
-                                newMap.set(element.key, parsedWorklog);
-                                return newMap;
-                            });
-                        },
-                        error: (err) => {
-                            console.log("err:", err);
-                        },
+                    }))
+                    parsed.issues.forEach((element) => {
+                        AP.request({
+                            url: `/rest/api/3/issue/${element.key}/worklog/`,
+                            type: "GET",
+                            success: (data) => {
+                                const parsedWorklog = JSON.parse(data);
+                                setWorklogMap((prev) => {
+                                    let newMap = new Map(prev);
+                                    newMap.set(element.key, parsedWorklog);
+                                    newMap.forEach(e => {
+                                        console.log("Account IIIIIIIIIIDDD", accId)
+                                        console.log('BEFOOOOOOOOOORE', e.worklogs)
+                                        e.worklogs = e.worklogs.filter((worklog) => worklog.author.accountId == accId)
+                                        console.log('AFTEEEEEEEEEEEER', e.worklogs)
+
+                                    })
+                                    return newMap;
+                                });
+                            },
+                            error: (err) => {
+                                console.log("err:", err);
+                            },
+                        });
                     });
-                });
-            },
-            error: (err) => {
-                console.log("err:", err);
-            },
-        });
-    }, []);
+                },
+                error: (err) => {
+                    console.log("err:", err);
+                },
+            });
+        }
+    }, [accId]);
 
     useEffect(() => {
         if (worklogMap.size > 0) {
@@ -74,6 +91,7 @@ export default function HelloWorld() {
                 chrome: false,
                 customData: {selectedIssue, selectedAction}
             }).on("close", (output) => {
+                console.log(output)
                 if (!output)
                     return;
                 if (output.responseText) {
@@ -98,12 +116,12 @@ export default function HelloWorld() {
         }
 
     }, [selectedIssue])
-    const handleClick = (id, action, parent, comment, logId, authorId,description, startDate) => {
+    const handleClick = (id, action, parent, comment, logId, description, startDate) => {
         // Update the state using the setMyStateValue function
         if (!parent)
             setSelectedIssue({label: id, value: id});
         else
-            setSelectedIssue({comment, logId, description, startDate,authorId, data: {label: parent, value: parent}})
+            setSelectedIssue({comment, logId, description, startDate, data: {label: parent, value: parent}})
         setSelectedAction(action)
 
         console.log('ISSUE :', selectedIssue)
@@ -115,11 +133,25 @@ export default function HelloWorld() {
             url: `/rest/api/3/issue/${parent}/worklog/${logId}`,
             type: 'DELETE',
             success: function (responseText) {
-                console.log(responseText);
+                const flag = AP.flag.create({
+                    title: ' ',
+                    body: 'Worklog deleted successfuly',
+                    type: 'success'
+                });
+                setTimeout(() => {
+                    flag.close();
+                }, 4000);
             },
             error: function (err) {
                 console.log(err);
-                console.log("********************")
+                const flag = AP.flag.create({
+                    title: ' ',
+                    body: `${err.responseText}`,
+                    type: 'error'
+                });
+                setTimeout(() => {
+                    flag.close();
+                }, 4000);
             }
         });
         const parentIndex = displayItems.findIndex(obj => obj.id === parent);
@@ -136,18 +168,17 @@ export default function HelloWorld() {
     const getItems = () => {
 
         let arr = Array.from(worklogMap).map(([k, v]) => {
-            console.log(v);
+            // console.log(v);
             return {
                 id: k,
                 title: k,
-                description: v.total.toString(),
+                // description: v.total.toString(),
                 action: 'Add',
                 children: v.worklogs.map((elm) => {
                     return {
                         parent: k,
                         logId: elm.id,
                         title: elm.author.displayName,
-                        authorId: elm.author.accountId,
                         comment: (elm.comment ? (elm.comment.content[0] ? elm.comment.content[0].content[0].text : null) : null),
                         description: elm.timeSpentSeconds / 3600,
                         startDate: new Date(elm.started).toISOString().slice(0, 16) + "+0100",
@@ -161,7 +192,8 @@ export default function HelloWorld() {
 
 
     return (
-        <div style={{margin: "20px 20px 20px 20px"}}>
+
+        <div style={{margin: "2rem"}}>
             <Button
                 appearance="primary"
                 onClick={() =>
@@ -178,8 +210,8 @@ export default function HelloWorld() {
                     <Header width={300}>Time Spent</Header>
                     <Header width={300}>Start Date</Header>
                     {/*<Header width={300}>Comment</Header>*/}
-                    <Header width={300}>Author</Header>
-                    <Header width={300}>Update Author</Header>
+                    <Header width={300}>Comment</Header>
+                    <Header width={300}>Actions</Header>
                 </Headers>
                 <Rows
                     items={displayItems}
@@ -191,7 +223,6 @@ export default function HelloWorld() {
                                  action,
                                  comment,
                                  logId,
-                                 authorId,
                                  startDate,
                                  children = []
                              }) => (
@@ -218,12 +249,11 @@ export default function HelloWorld() {
                             {/*<Cell>{new Date(startDate).toLocaleString()}</Cell>*/}
                             <Cell>{startDate ? new Date(startDate).toLocaleString() : startDate}</Cell>
                             <Cell>{comment}</Cell>
-                            <Cell>{authorId}</Cell>
                             <Cell>
                                 <Button
                                     isDisabled={(new Date(startDate).getMonth() !== currentMonth) && action == 'Edit'}
                                     onClick={() => {
-                                        handleClick(id, action, parent, comment, logId,authorId, description, startDate)
+                                        handleClick(id, action, parent, comment, logId, description, startDate)
                                     }}
                                     iconBefore={action === 'Add' ? (<AddIcon size="small"/>) : (
                                         <EditIcon size="small"/>)}>
@@ -241,5 +271,6 @@ export default function HelloWorld() {
                 />
             </TableTree>
         </div>
-    );
+    )
+        ;
 }

@@ -42,7 +42,7 @@ export function addServerSideRendering(app, handlebarsEngine) {
         if (devEnv) delete require.cache[nodeViewPath];
         const rootElement = React.createElement(require(nodeViewPath).default, props);
         ssrOptions.body = renderToString(sheet.collectStyles(rootElement));
-        ssrOptions.styleTags = sheet.getStyleTags();
+        // ssrOptions.styleTags = sheet.getStyleTags();
       }
       const viewOptions = {
         ...options,

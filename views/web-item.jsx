@@ -31,7 +31,7 @@ export default function WebItem() {
 
     const [selectedAction, setSelectedAction] = useState('Indep')
     const [output, setOutput] = useState('none')
-    const [accId,setAccId] = useState('')
+    const [accId, setAccId] = useState(null)
 
 
     const onClose = () => {
@@ -41,8 +41,7 @@ export default function WebItem() {
     useEffect(() => {
         // For the generalPages
         AP.dialog.getCustomData(function (customData) {
-
-            if(!customData){
+            if (!customData) {
                 // For webItem button
                 setStartDate(new Date().toISOString().slice(0, 16) + "+0100")
                 AP.context.getContext(function (response) {
@@ -58,8 +57,10 @@ export default function WebItem() {
             }
             setSelectedAction(customData.selectedAction)
             if (customData.selectedIssue.logId) {
+                console.log("------------------------------",customData.selectedIssue)
                 setSelectedIssue(customData.selectedIssue.data.value)
                 setDisplayedIssue(customData.selectedIssue.data)
+                setAccId(customData.selectedIssue.authorId)
                 // setTimeSpent(parseInt(customData.selectedIssue.description.slice(0, 2)))
                 // setOldVal(parseInt(customData.selectedIssue.description.slice(0, 2)))
                 setTimeSpent(customData.selectedIssue.description)
@@ -100,11 +101,10 @@ export default function WebItem() {
     }, []);
 
     useEffect(() => {
-        if (startDate != null) {
+        if (startDate != null && accId == null) {
             AP.user.getCurrentUser(async (user) => {
                 // if (selectedAction=='Add') {
                 console.log(user)
-                setAccId(user.atlassianAccountId)
                 const t1 = await getTimespent(user.atlassianAccountId, new Date(startDate));
                 console.log("t1 : ", t1)
                 setTotalTimeSpent(t1);
@@ -116,8 +116,16 @@ export default function WebItem() {
                 //     setTotalTimeSpent(t2);
                 // }
             });
+        } else if (accId != null) {
+            async function fetchTimeSpent() {
+                const t1 = await getTimespent(accId, new Date(startDate));
+                console.log("t1 of another user : ", t1)
+                setTotalTimeSpent(t1);
+            }
+
+            fetchTimeSpent();
         }
-    }, [startDate])
+    }, [startDate, accId])
 
 
     const onSubmit = async (e) => {
@@ -185,15 +193,13 @@ export default function WebItem() {
                 }),
                 contentType: "application/json",
                 success: (res) => {
-                    console.log("Edited Worklog:", res);
+                    AP.dialog.close(res);
                 },
                 error: (err) => {
-                    console.log("err", err);
+                    AP.dialog.close(err);
                 },
             });
         }
-        console.log('reached !!')
-        AP.dialog.close({output});
     };
 
     return (
@@ -247,8 +253,7 @@ export default function WebItem() {
                         ariaLabel="Done: 6 of 10 issues"
                         value={selectedAction == 'Add' ? ((Number(timeSpent) + totalTimeSpent) / 8) : ((Number(timeSpent) + totalTimeSpent - oldVal) / 8)}
                     />
-                    {<p>You
-                        have {selectedAction == 'Add' ? (8 - timeSpent - totalTimeSpent) : (8 - totalTimeSpent - Number(timeSpent) + oldVal)} hours
+                    {<p>You have {selectedAction == 'Add' ? (8 - timeSpent - totalTimeSpent) : (8 - totalTimeSpent - Number(timeSpent) + oldVal)} hours
                         left on this start date</p>}
                     <label style={{marginTop: '30px'}}>Comment</label>
                     <TextArea

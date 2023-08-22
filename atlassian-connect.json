@@ -1,8 +1,8 @@
 {
-  "key": "my-app",
+  "key": "leyton-timesheet",
   "name": "Jira Time Tracking Plugin",
   "description": "Plugin",
-  "baseUrl": "https://e60a-105-72-24-31.ngrok-free.app",
+  "baseUrl": "https://a08e-105-72-24-31.ngrok-free.app",
   "authentication": {
     "type": "jwt"
   },
@@ -21,6 +21,7 @@
     "signed-install": true
   },
   "modules": {
+
     "generalPages": [
       {
         "key": "hello-world-page-jira",
@@ -28,12 +29,28 @@
         "name": {
           "value": "TimeTracking"
         },
-        "url": "/hello-world"
-//        "conditions": [{
-//          "condition": "user_is_logged_in"
-//        }]
+        "url": "/hello-world",
+        "conditions": [{
+          "condition": "user_is_logged_in"
+        }]
       }
     ],
+    "adminPages": [
+      {
+        "url": "/my-admin-page",
+        "name": {
+          "value": "My Admin Page"
+        },
+        "key": "my-admin-page"
+      }
+    ],
+    "configurePage": {
+      "url": "/my-config-page",
+      "name": {
+        "value": "My Configure Page"
+      },
+      "key": "my-config-page"
+    },
     "jiraTimeTrackingProviders": [
       {
         "name": {
